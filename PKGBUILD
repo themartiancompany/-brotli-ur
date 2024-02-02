@@ -5,14 +5,30 @@
 # Contributor: Guillaume Horel <guillaume.horel@gmail.com>
 
 pkgbase=brotli
-pkgname=('brotli' 'python-brotli' 'brotli-testdata')
+pkgname=(
+  'brotli'
+  'python-brotli'
+  'brotli-testdata'
+)
 _gitcommit=ed738e842d2fbdf2d6459e39267a633c4a9b2f5d
 pkgver=1.1.0
 pkgrel=1
 pkgdesc='Generic-purpose lossless compression algorithm'
 url='https://github.com/google/brotli'
-arch=('x86_64')
-license=('MIT')
+arch=(
+  'x86_64'
+  'arm'
+  'aarch64'
+  'i686'
+  'mips'
+  'pentium4'
+  'powerpc'
+  'armv7h'
+  'armv6l'
+)
+license=(
+  'MIT'
+)
 makedepends=(
   git
   cmake
@@ -21,36 +37,78 @@ makedepends=(
   python-installer
   python-wheel
 )
-source=(${pkgname}::"git+${url}#commit=${_gitcommit}")
-sha512sums=('SKIP')
+source=(
+  ${pkgname}::"git+${url}#commit=${_gitcommit}"
+)
+sha512sums=(
+  'SKIP'
+)
 
 pkgver() {
-  cd ${pkgbase}
-  git describe --tags --match 'v*' | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
+  cd \
+    "${pkgbase}"
+  git \
+    describe \
+      --tags \
+      --match \
+        'v*' | \
+        sed \
+          's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
 }
 
 build() {
-  cd ${pkgbase}
-  python -m build --wheel --no-isolation
-  cmake -S . -B build \
+  cd \
+    ${pkgbase}
+  python \
+    -m \
+      build \
+    --wheel \
+    --no-isolation
+  cmake \
+    -S \
+    . \
+    -B \
+      build \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=/usr \
     -DBUILD_SHARED_LIBS=True \
-    -DCMAKE_C_FLAGS="$CFLAGS -ffat-lto-objects"
-  cmake --build build -v
+    -DCMAKE_C_FLAGS="${CFLAGS} -ffat-lto-objects"
+  cmake \
+    --build \
+      build \
+    -v
 }
 
 check() {
-  cd ${pkgbase}
-  local python_version=$(python -c 'import sys; print("".join(map(str, sys.version_info[:2])))')
-  PYTHONPATH="$PWD/bin/lib.linux-$CARCH-cpython-${python_version}" python -m unittest discover python "*_test.py"
-  cd build
-  ctest --output-on-failure --stop-on-failure -j$(nproc)
+  cd \
+    ${pkgbase}
+  local \
+    _python_version
+  _python_version="$( \
+      python \
+        -c \
+          'import sys; print("".join(map(str, sys.version_info[:2])))')"
+  PYTHONPATH="$PWD/bin/lib.linux-${CARCH}-cpython-${_python_version}" \
+    python \
+    -m \
+      unittest \
+    discover \
+      python \
+        "*_test.py"
+  cd \
+    build
+  ctest \
+    --output-on-failure \
+    --stop-on-failure \
+    -j"$(nproc)"
 }
 
 package_brotli() {
-  depends=('glibc')
-  provides=(libbrotlicommon.so libbrotlidec.so libbrotlienc.so)
+  depends=(
+    'glibc'
+  )
+  provides=(
+    libbrotlicommon.so libbrotlidec.so libbrotlienc.so)
 
   cd ${pkgbase}
   DESTDIR="$pkgdir" cmake --install build
